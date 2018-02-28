@@ -1,6 +1,5 @@
-
 const Wallet = require('ethereumjs-wallet')
-const EthUtil = require('ethereumjs-util')
+const ethUtils = require('ethereumjs-util')
 
 // var bip39 = require("bip39");
 // var hdkey = require('ethereumjs-wallet/hdkey');
@@ -15,7 +14,7 @@ function privateKeyProvider(privateKey, provider_url) {
   this.wallets = {};
   this.addresses = [];
 
-  const privateKeyBuffer = EthUtil.toBuffer(privateKey)
+  const privateKeyBuffer = ethUtils.toBuffer(privateKey)
   const wallet = Wallet.fromPrivateKey(privateKeyBuffer)
   const addr = wallet.getAddressString()
 
@@ -42,13 +41,19 @@ function privateKeyProvider(privateKey, provider_url) {
       cb(null, rawTx);
     },
     signMessage: function(a, cb) {
-      // TODO:: THIS FUNCTION IS BROKEN!
+
       let pkey;
       if (tmp_wallets[a.from]) { pkey = tmp_wallets[a.from].getPrivateKey(); }
       else { cb('Account not found'); }
-      const hashed = EthUtil.hashPersonalMessage(a.data)
-      const result = EthUtil.ecsign(hashed, pkey)
-      cb(result)
+
+      const web3 = new Web3()
+      const prefix = "\x19Ethereum Signed Message:\n32";
+      const prefixedBytes = web3.fromAscii(prefix) + a.data.slice(2)
+      const prefixedHash = web3.sha3(prefixedBytes, { encoding: 'hex' })
+      var echash = Buffer.from(prefixedHash.slice(2), 'hex')
+      const ecresult = ethUtils.ecsign(echash, pkey)
+      const result = ethUtils.toRpcSig(ecresult.v, ecresult.r, ecresult.s)
+      cb(null, result)
     }
   }));
   this.engine.addProvider(new FiltersSubprovider());

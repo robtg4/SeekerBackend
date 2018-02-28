@@ -17,10 +17,8 @@ describe("verifyMessage", async () => {
 
   beforeEach(async () => {
     web3 = new Web3() //Genache for now make configurable
-    // NOTE:: Following 2 lines left here only for reference: will need to use some method of importing a private key in the final version
-    // const gasPayingAccount = web3.eth.accounts.privateKeyToAccount(privKey)
 
-    web3.setProvider(TestRPC.provider())
+    web3.setProvider(new privateKeyProvider(privKey, 'http://localhost:7545'))
     if (typeof web3.eth.getAccountsPromise === 'undefined') {
       Promise.promisifyAll(web3.eth, { suffix: 'Promise' });
     }

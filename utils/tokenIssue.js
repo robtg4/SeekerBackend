@@ -1,3 +1,5 @@
+require("babel-polyfill")
+
 const computeMintedSignature = async (tokenId, recipientAddress, issuingAddress, web3) => {
   const idString = (new web3.BigNumber(tokenId)).toString(16)
   const hashInput = '0'.repeat(64 - idString.length) + idString + web3.toHex(recipientAddress).slice(2)
