@@ -11,7 +11,7 @@ var config = require('./config')
 
 // Web3 setup
 var web3 = new Web3(config.rpc_address) //Genache for now make configurable
-const gasPayingAccount = web3.eth.accounts.privateKeyToAccount(config.private_key)
+const gasAndIssuing = web3.eth.accounts.privateKeyToAccount(config.private_key)
 
 // JWT setup
 app.set('superSecret', config.secret);
@@ -36,7 +36,7 @@ router.use(function(req, res, next) {
       // verifies secret and checks exp
       jwt.verify(token, app.get('superSecret'), function(err, decoded) {      
         if (err) {
-          return res.json({ success: false, message: 'Failed to authenticate token.' });    
+          return res.json({ success: false, message: 'Failed to authenticate JWT.' });    
         } else {
           // if everything is good, save to request for use in other routes
           req.decoded = decoded;    
@@ -50,7 +50,7 @@ router.use(function(req, res, next) {
       // return an error
       return res.status(403).send({ 
           success: false, 
-          message: 'No token provided.' 
+          message: 'No JWT provided.' 
       });
   
     }
@@ -60,8 +60,11 @@ router.get('/', function(req, res) {
     res.json({ message: 'Welcome' })
 })
 
-router.get('/token/issue', function(req, res) {
-    console.log(tokenIssue.computeSignature(1, 1, 1, web3))
+router.post('/token/issue', function(req, res) {
+    const address = req.body._from
+    id = 1
+    console.log(tokenIssue.computeMintedSignature(id, _from, gasAndIssuing, web3))
+    id++
     res.json({ message: 'token issued' })
 })
 
