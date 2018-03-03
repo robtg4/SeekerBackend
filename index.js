@@ -4,6 +4,7 @@ var app        = express()
 var bodyParser = require('body-parser')
 var Web3 = require('web3')
 var tokenIssue = require('./tokenIssue')
+var jwt    = require('jsonwebtoken')
 
 // Config imports
 var config = require('./config')
@@ -12,11 +13,48 @@ var config = require('./config')
 var web3 = new Web3(config.rpc_address) //Genache for now make configurable
 const gasPayingAccount = web3.eth.accounts.privateKeyToAccount(config.private_key)
 
+// JWT setup
+app.set('superSecret', config.secret);
+
 // Express extentions
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 
 var router = express.Router()
+
+// Middleware JWT Protection
+// ==========================================================
+// route middleware to verify a token
+router.use(function(req, res, next) {
+    
+    // check post parameters for token
+    var token = req.headers['Authorization'];
+  
+    // decode token
+    if (token) {
+  
+      // verifies secret and checks exp
+      jwt.verify(token, app.get('superSecret'), function(err, decoded) {      
+        if (err) {
+          return res.json({ success: false, message: 'Failed to authenticate token.' });    
+        } else {
+          // if everything is good, save to request for use in other routes
+          req.decoded = decoded;    
+          next();
+        }
+      });
+  
+    } else {
+  
+      // if there is no token
+      // return an error
+      return res.status(403).send({ 
+          success: false, 
+          message: 'No token provided.' 
+      });
+  
+    }
+  });
 
 router.get('/', function(req, res) {
     res.json({ message: 'Welcome' })
