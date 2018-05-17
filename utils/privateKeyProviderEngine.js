@@ -63,6 +63,7 @@ function privateKeyProvider(privateKey, provider_url) {
       var echash = Buffer.from(prefixedHash.slice(2), 'hex')
       const ecresult = ethUtils.ecsign(echash, pkey)
       const result = ethUtils.toRpcSig(ecresult.v, ecresult.r, ecresult.s)
+      //sending nothing or the result via cb
       cb(null, result)
     }
   }));
