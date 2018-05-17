@@ -1,47 +1,57 @@
-const Wallet = require('ethereumjs-wallet')
+/* Description: lightweight wallet with helpful functionhttps
+Resource: github.com/ethereumjs/ethereumjs-wallet */
+const Wallet = require('ethereumjs-wallet')  
+
+/* Description: A collection of utility functions for ethereum. It can be used in node.js
+Resource: https://github.com/ethereumjs/ethereumjs-util */
 const ethUtils = require('ethereumjs-util')
 
 // var bip39 = require("bip39");
 // var hdkey = require('ethereumjs-wallet/hdkey');
-var ProviderEngine = require("web3-provider-engine");
+
+/* Description: Web3 ProviderEngine is a tool for composing your own web3 providers. */
+var ProviderEngine = require("web3-provider-engine"); 
 var FiltersSubprovider = require('web3-provider-engine/subproviders/filters.js');
 var HookedSubprovider = require('web3-provider-engine/subproviders/hooked-wallet.js');
 var Web3Subprovider = require("web3-provider-engine/subproviders/web3.js");
 var Web3 = require("web3");
 var Transaction = require('ethereumjs-tx');
 
+//function to be used instead of HDWalletProvider to use private key instead of mnemonic 
 function privateKeyProvider(privateKey, provider_url) {
   this.wallets = {};
   this.addresses = [];
 
   const privateKeyBuffer = ethUtils.toBuffer(privateKey)
-  const wallet = Wallet.fromPrivateKey(privateKeyBuffer)
-  const addr = wallet.getAddressString()
+  const wallet = Wallet.fromPrivateKey(privateKeyBuffer) //generate instance of wallet from provided private key (pk) 
+  const addr = wallet.getAddressString() //get public address of the wallet that was generated 
 
-  this.addresses.push(addr);
-  this.wallets[addr] = wallet;
+  this.addresses.push(addr); //add this to list of addresses we have access to 
+  this.wallets[addr] = wallet; //make this the addr attribute in our wallet object 
 
-  const tmp_accounts = this.addresses;
-  const tmp_wallets = this.wallets;
+  const tmp_accounts = this.addresses; //make the addresses the temp accounts we are accessing 
+  const tmp_wallets = this.wallets; //same thing for our temp wallets variable 
 
-  this.engine = new ProviderEngine();
-  this.engine.addProvider(new HookedSubprovider({
-    getAccounts: function(cb) { cb(null, tmp_accounts) },
-    getPrivateKey: function(address, cb) {
+  this.engine = new ProviderEngine(); //creating new provider instance with a few methods we can use later 
+  this.engine.addProvider(new HookedSubprovider({ 
+    getAccounts: function(cb) { cb(null, tmp_accounts) }, //f1: gets the accounts that are on provider's network 
+    getPrivateKey: function(address, cb) { // f2: gets pk from the accounts gotten prior in function 1 compares to temp
       if (!tmp_wallets[address]) { return cb('Account not found'); }
       else { cb(null, tmp_wallets[address].getPrivateKey().toString('hex')); }
     },
-    signTransaction: function(txParams, cb) {
+    signTransaction: function(txParams, cb) { //if our wallet is the one that sent the tx, record the pk from that wallet
       let pkey;
       if (tmp_wallets[txParams.from]) { pkey = tmp_wallets[txParams.from].getPrivateKey(); }
       else { cb('Account not found'); }
-      var tx = new Transaction(txParams);
-      tx.sign(pkey);
-      var rawTx = '0x' + tx.serialize().toString('hex');
+      var tx = new Transaction(txParams); //create a new transaction with the tx parameters 
+      tx.sign(pkey); //sign transaction with the pk
+      var rawTx = '0x' + tx.serialize().toString('hex'); //create a raw tx by serializing the tx
       cb(null, rawTx);
     },
     signMessage: function(a, cb) {
-
+      /* sign message function, input a representing the message
+      note: cb is an optional callback function, returns an error object as first 
+      parameter and the result as second. */
       let pkey;
       if (tmp_wallets[a.from]) { pkey = tmp_wallets[a.from].getPrivateKey(); }
       else { cb('Account not found'); }
